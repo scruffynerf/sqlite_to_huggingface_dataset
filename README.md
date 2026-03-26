@@ -78,6 +78,7 @@ python sqlite_to_hf.py mydata.db users my-username/my-dataset --dry-run
 | `--token` | HuggingFace API token (overrides cached login) | `None` |
 | `--query` | Custom SQL query to run | `None` |
 | `--batch-size` | Rows per batch for SQLite fetching | `10,000` |
+| `--max-shard-size` | Max size per shard (e.g. '50MB') | `500MB` |
 | `--dry-run` | Fetch and preview without uploading | `False` |
 
 ---

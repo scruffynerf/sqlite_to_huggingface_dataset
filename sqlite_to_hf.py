@@ -60,6 +60,11 @@ def parse_args():
         help="Number of rows to fetch per batch (default: 10000). Lower if you hit memory limits.",
     )
     parser.add_argument(
+        "--max-shard-size",
+        default="500MB",
+        help="Maximum size of each shard (e.g. '500MB', '1GB'). Lower if uploads are unstable.",
+    )
+    parser.add_argument(
         "--dry-run",
         action="store_true",
         help="Fetch and preview the data without uploading anything.",
@@ -156,12 +161,12 @@ def upload_to_huggingface(
     split: str,
     private: bool,
     token: str | None,
+    max_shard_size: str,
 ):
     from datasets import Dataset
     from huggingface_hub import HfApi
 
-    print(f"[INFO] Building HuggingFace Dataset using generator...")
-    
+    print(f"\n[STEP 1/2] Generating Parquet shards from SQLite...")
     # Use gen_kwargs to avoid pickling issues with closures
     dataset = Dataset.from_generator(
         load_sqlite_table_generator,
@@ -186,19 +191,22 @@ def upload_to_huggingface(
             exist_ok=True,
         )
         visibility = "private" if private else "public"
-        print(f"[INFO] Dataset repo ready: https://huggingface.co/datasets/{repo_id} ({visibility})")
+        # print(f"[INFO] Dataset repo ready: https://huggingface.co/datasets/{repo_id} ({visibility})")
     except Exception as e:
         print(f"[ERROR] Could not create repo '{repo_id}': {e}")
         sys.exit(1)
 
-    # push_to_hub handles sharding automatically.
+    print(f"\n[STEP 2/2] Uploading shards to the Hub...")
+    print(f"           Repo:  https://huggingface.co/datasets/{repo_id} ({visibility})")
+    print(f"           Split: {split}")
+    print(f"           Shard size limit: {max_shard_size}")
 
-    print(f"[INFO] Pushing to Hub as split='{split}'...")
     dataset.push_to_hub(
         repo_id=repo_id,
         split=split,
         private=private,
         token=token,
+        max_shard_size=max_shard_size,
     )
 
     print(f"\n[OK] Upload complete!")
@@ -237,6 +245,7 @@ def main():
         split=args.split,
         private=args.private,
         token=args.token,
+        max_shard_size=args.max_shard_size,
     )
 
 
