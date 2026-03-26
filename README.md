@@ -28,12 +28,13 @@ pip install datasets huggingface_hub
 Log in once to cache your token (stored in `~/.cache/huggingface`):
 
 ```bash
-huggingface-cli login
+hf auth login
 ```
 
 ## 📖 Usage
 
 ### Basic Upload
+
 Upload an entire table to a new or existing repository:
 
 ```bash
@@ -41,6 +42,7 @@ python sqlite_to_hf.py mydata.db users my-username/my-dataset
 ```
 
 ### Private Dataset
+
 Create the repository as private:
 
 ```bash
@@ -79,6 +81,18 @@ python sqlite_to_hf.py mydata.db users my-username/my-dataset --dry-run
 | `--dry-run` | Fetch and preview without uploading | `False` |
 
 ---
+
+## 📜 License
+
+This project is licensed under the **GNU General Public License v3.0 (GPL-3.0)**. See the [LICENSE](LICENSE) file for details.
+
+## 🌱 Our Philosophy: Pay It Forward
+
+We believe in the power of open-source and the strength of the community. This tool is free to use, modify, and distribute. If you find it helpful, we encourage you to **pay it forward**:
+
+- **Share your knowledge**: Help someone else solve a problem.
+- **Contribute**: Submit a PR, improve documentation, or report a bug.
+- **Build together**: Use this as a foundation for even better tools.
 
 <p align="center">
   Made with ❤️ for the Open Source Community

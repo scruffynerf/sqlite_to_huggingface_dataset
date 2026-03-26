@@ -148,7 +148,10 @@ def infer_and_print_schema_from_generator(generator):
 
 
 def upload_to_huggingface(
-    row_generator,
+    db_path: str,
+    table: str,
+    query: str | None,
+    batch_size: int,
     repo_id: str,
     split: str,
     private: bool,
@@ -158,8 +161,17 @@ def upload_to_huggingface(
     from huggingface_hub import HfApi
 
     print(f"[INFO] Building HuggingFace Dataset using generator...")
-    # Using from_generator for memory efficiency
-    dataset = Dataset.from_generator(lambda: row_generator)
+    
+    # Use gen_kwargs to avoid pickling issues with closures
+    dataset = Dataset.from_generator(
+        load_sqlite_table_generator,
+        gen_kwargs={
+            "db_path": db_path,
+            "table": table,
+            "query": query,
+            "batch_size": batch_size,
+        }
+    )
 
     print(f"[INFO] Dataset features: {dataset.features}")
 
@@ -197,9 +209,9 @@ def main():
     args = parse_args()
     check_imports()
 
+    # Pre-check/Schema inference (consumes one item from a fresh generator)
     gen = load_sqlite_table_generator(args.db_path, args.table, args.query, args.batch_size)
-
-    gen, first_row = infer_and_print_schema_from_generator(gen)
+    _, first_row = infer_and_print_schema_from_generator(gen)
 
     if first_row is None:
         print("[WARN] No rows found. Nothing to upload.")
@@ -207,15 +219,20 @@ def main():
 
     if args.dry_run:
         print("[DRY RUN] Skipping upload. First 3 rows:")
+        # We need a fresh generator for the dry run to show the first row again
+        gen_dry = load_sqlite_table_generator(args.db_path, args.table, args.query, args.batch_size)
         try:
             for _ in range(3):
-                print(f"  {next(gen)}")
+                print(f"  {dict(next(gen_dry))}")
         except StopIteration:
             pass
         sys.exit(0)
 
     upload_to_huggingface(
-        row_generator=gen,
+        db_path=args.db_path,
+        table=args.table,
+        query=args.query,
+        batch_size=args.batch_size,
         repo_id=args.repo_id,
         split=args.split,
         private=args.private,
